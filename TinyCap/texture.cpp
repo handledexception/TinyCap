@@ -1,17 +1,17 @@
 #include "texture.h"
 #include "util.h"
 
-Texture::Texture() { m_Texture = nullptr; m_TextureView = nullptr; };
+Texture::Texture() : m_Texture(0), m_TextureView(0) { };
 
 Texture::~Texture() { };
 
 bool Texture::Init(ID3D11Device *device, ID3D11DeviceContext *context, ID3D11Texture2D *texture)
 {
 	HRESULT hr;
-	D3D11_TEXTURE2D_DESC frameDesc;
 	//D3D11_TEXTURE2D_DESC copyDesc;
-	
+	D3D11_TEXTURE2D_DESC frameDesc;
 	texture->GetDesc(&frameDesc);
+		
 	/*
 	ZeroMemory(&copyDesc, sizeof(D3D11_TEXTURE2D_DESC));
 	copyDesc.Width = frameDesc.Width;
@@ -33,7 +33,6 @@ bool Texture::Init(ID3D11Device *device, ID3D11DeviceContext *context, ID3D11Tex
 	shaderDesc.Texture2D.MipLevels = frameDesc.MipLevels;
 
 	hr = device->CreateShaderResourceView(texture, &shaderDesc, &m_TextureView);
-	
 	if (FAILED(hr)) {
 		DebugOut("ID3D11Device::CreateShaderResourceView from ID3D11Texture2D failed!\n");
 		return false;

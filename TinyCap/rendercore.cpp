@@ -344,7 +344,7 @@ bool RenderCore::Render()
 	
 	ZBufferState(0);
 
-	if (!gScene->UpdateVertexBuffer(50, 50, 1280, 720)) {
+	if (!gScene->UpdateVertexBuffer(0, 0, 1280, 720)) {
 		DebugOut("Scene::UpdateVertexBuffer failed!\n");
 		return false;
 	}
@@ -359,11 +359,13 @@ bool RenderCore::Render()
 	DirectX::XMLoadFloat3((const DirectX::XMFLOAT3 *)&lookAt),
 	DirectX::XMLoadFloat3((const DirectX::XMFLOAT3 *)&upDir)); */		
 	
-	duper->GetFrame();
-
-	gDesktopTexture->Init(m_d3d11Device, m_d3d11DeviceContext, duper->GetTexture());
-	m_TextureShader->Render(ctx, m_WorldMatrix, m_OrthoMatrix, gDesktopTexture->GetTexture());
-	ZBufferState(1);
+	if (duper->GetFrame()) {
+		gDesktopTexture->Init(m_d3d11Device, m_d3d11DeviceContext, duper->GetTexture());
+		m_TextureShader->Render(ctx, m_WorldMatrix, m_OrthoMatrix, gDesktopTexture->GetTexture());
+		duper->FinishFrame();
+	} 
+	
+	//ZBufferState(1);
 
 	EndScene();
 

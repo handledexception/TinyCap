@@ -99,8 +99,8 @@ bool Scene::UpdateVertexBuffer(int posx, int posy, int screenWidth, int screenHe
 	vertex_t *vertices;
 	rectf bitmapRect;
 	
-	m_PixelWidth = 640;
-	m_PixelHeight = 360;
+	m_PixelWidth = 1280;
+	m_PixelHeight = 720;
 
 	bitmapRect.left  = (float)((screenWidth / 2) * -1.f) + (float)posx;	
 	bitmapRect.right = bitmapRect.left + (float)m_PixelWidth;

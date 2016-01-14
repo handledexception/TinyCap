@@ -1,7 +1,7 @@
 #include "dxgi_duplication.h"
 #include "util.h"
 
-DXGIDuplication::DXGIDuplication() { };
+DXGIDuplication::DXGIDuplication() : m_AcquiredDesktopImage(0), m_DesktopDuplication(0) { };
 
 DXGIDuplication::~DXGIDuplication() { };
 
@@ -25,18 +25,18 @@ bool DXGIDuplication::GetFrame()
 	HRESULT hr;
 	IDXGIResource *desktopResource = nullptr;
 	DXGI_OUTDUPL_FRAME_INFO frameInfo;
+
 	ZeroMemory(&frameInfo, sizeof(DXGI_OUTDUPL_FRAME_INFO));
-	//if (desktopResource) { desktopResource->Release(); desktopResource = nullptr; }
 	hr = m_DesktopDuplication->AcquireNextFrame(500, &frameInfo, &desktopResource);
 	if (FAILED(hr)) {
 		DebugOut("IDXGIOutputDuplication::AcquireNextFrame failed!\n");
 		return false;
 	}
 
-	/* if (m_AcquiredDesktopImage) {
+	if (m_AcquiredDesktopImage) {
 		m_AcquiredDesktopImage->Release();
 		m_AcquiredDesktopImage = nullptr;
-	} */
+	}
 
 	hr = desktopResource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&m_AcquiredDesktopImage));
 	desktopResource->Release();
@@ -48,6 +48,24 @@ bool DXGIDuplication::GetFrame()
 
 	return true;
 }
+
+bool DXGIDuplication::FinishFrame()
+{
+	HRESULT hr;
+	hr = m_DesktopDuplication->ReleaseFrame();
+	if (FAILED(hr)) {
+		DebugOut("IDXGIOutputDuplication::ReleaseFrame failed!\n");
+		return false;
+	}
+
+	if (m_AcquiredDesktopImage) {
+		m_AcquiredDesktopImage->Release();
+		m_AcquiredDesktopImage = nullptr;
+	}
+
+	return true;
+};
+
 
 ID3D11Texture2D *DXGIDuplication::GetTexture()
 {

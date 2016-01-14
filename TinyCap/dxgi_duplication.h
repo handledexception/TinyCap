@@ -10,6 +10,7 @@ public:
 
 	bool Init(IDXGIOutput1 *, ID3D11Device *);
 	bool GetFrame();
+	bool FinishFrame();
 	ID3D11Texture2D *GetTexture();
 
 private:
