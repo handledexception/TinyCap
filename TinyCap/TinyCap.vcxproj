@@ -118,6 +118,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="dxgi_duplication.cpp" />
     <ClCompile Include="rendercore.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="appsystem.cpp" />
@@ -127,6 +128,7 @@
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="dxgi_duplication.h" />
     <ClInclude Include="rendercore.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="appsystem.h" />

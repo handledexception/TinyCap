@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 
+#include "dxgi_duplication.h"
 #include "rendercore.h"
 #include "scene.h"
 #include "util.h"
@@ -23,8 +24,9 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	HRESULT hr;
 	
 	IDXGIFactory1 *factory;
-	IDXGIAdapter *adapter;
+	IDXGIAdapter1 *adapter;
 	IDXGIOutput *adapterOutput;
+	IDXGIOutput1 *adapterOutput1;
 
 	DXGI_ADAPTER_DESC adapterDesc;	
 	DXGI_MODE_DESC *displayModeList;
@@ -53,18 +55,21 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	//	return false;
 	//}
 
-	if (!EnumerateDisplayAdapters()) {
+	if (!EnumerateDisplayAdapters(&gDXGIAdapters)) {
 		return false;
 	}
 
-	adapter = m_VideoAdapterList[0];
+	adapter = gDXGIAdapters[0];
 
 	hr = adapter->EnumOutputs(0, &adapterOutput);
 	if (FAILED(hr)) {
 		return false;
 	}
-
-	hr = adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
+	
+	// desktop duplication stuff
+	hr = adapterOutput->QueryInterface(&adapterOutput1);
+	
+	hr = adapterOutput1->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
 	if (FAILED(hr)) {
 		return false;
 	}
@@ -74,11 +79,11 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 		return false;
 	}
 
-	hr = adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, displayModeList);
+	hr = adapterOutput1->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, displayModeList);
 	if (FAILED(hr)) {
 		return false;
 	}
-
+	
 	for (UINT i = 0; i < numModes; i++) {
 		if (displayModeList[i].Width == (unsigned int)screenWidth) {
 			if (displayModeList[i].Height == (unsigned int)screenHeight) {
@@ -304,6 +309,9 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	gScene = new Scene(GetDevice(), GetDeviceContext());
 	m_TextureShader = new TextureShader(GetDevice(), GetDeviceContext()); // this should actually go in Scene class not Rendercore
 
+	DXGIDuplication *duper = new DXGIDuplication;
+	if (!duper->Init(adapterOutput1, GetDevice())) { return false; }
+
 	return true;
 };
 
@@ -312,6 +320,10 @@ void RenderCore::Shutdown()
 	delete gScene;
 	gScene = nullptr;
 
+	if (m_d3d11DepthStencilState) { m_d3d11DepthStencilState->Release(); }
+	if (m_d3d11DepthStencilDisabledState) { m_d3d11DepthStencilDisabledState->Release(); }
+	if (m_d3d11DepthStencilView) { m_d3d11DepthStencilView->Release(); }
+	if (m_d3d11RasterState) { m_d3d11RasterState->Release(); }
 	if (m_d3d11DepthStencilBuffer) { m_d3d11DepthStencilBuffer->Release(); }
 	if (m_d3d11RenderTargetView) { m_d3d11RenderTargetView->Release(); }
 	if (m_SwapChain) { m_SwapChain->Release(); }
@@ -324,7 +336,7 @@ bool RenderCore::Render()
 	ID3D11DeviceContext *ctx = this->GetDeviceContext();
 
 	BeginScene(0.0f, 0.125f, 0.3f, 1.0f);
-
+	
 	ZBufferState(0);
 
 	if (!gScene->UpdateVertexBuffer(50, 50, 1280, 720)) {
@@ -373,7 +385,7 @@ void RenderCore::EndScene()
 };
 
 IDXGISwapChain *RenderCore::GetSwapChain()
-{
+{ 
 	return m_SwapChain;
 };
 
@@ -397,9 +409,9 @@ void RenderCore::ZBufferState(int state)
 	}	
 };
 
-bool RenderCore::EnumerateDisplayAdapters()
+bool RenderCore::EnumerateDisplayAdapters(std::vector<IDXGIAdapter1 *> *dxgiAdapters)
 {
-	IDXGIAdapter *pAdapter;
+	IDXGIAdapter1 *pAdapter;
 	IDXGIFactory1 *pFactory = NULL;
 	HRESULT hr;
 
@@ -408,8 +420,9 @@ bool RenderCore::EnumerateDisplayAdapters()
 		return false;
 	}
 	
-	for (UINT i = 0; pFactory->EnumAdapters(i, &pAdapter) != DXGI_ERROR_NOT_FOUND; ++i) {
-		m_VideoAdapterList.push_back(pAdapter);
+	for (UINT i = 0; pFactory->EnumAdapters1(i, &pAdapter) != DXGI_ERROR_NOT_FOUND; ++i) {
+		dxgiAdapters->push_back(pAdapter);
+		//m_VideoAdapterList.push_back(pAdapter);
 	}
 
 	if (pFactory) {

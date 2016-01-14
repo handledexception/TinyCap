@@ -39,6 +39,9 @@
     <ClCompile Include="textureshader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dxgi_duplication.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -60,6 +63,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="textureshader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dxgi_duplication.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -10,6 +10,7 @@
 #include <vector>
 #include <Windows.h>
 #include <dxgi.h>
+#include <dxgi1_2.h>
 #include <d3dcommon.h>
 #include <d3d11.h>
 #include <DirectXMath.h>
@@ -42,7 +43,7 @@ private:
 	void BeginScene(float, float, float, float);
 	void EndScene();
 
-	bool EnumerateDisplayAdapters();
+	bool EnumerateDisplayAdapters(std::vector<IDXGIAdapter1*> *);
 
 private:
 	IDXGISwapChain *m_SwapChain;
@@ -61,9 +62,10 @@ private:
 	DirectX::XMMATRIX m_ProjectionMatrix;	
 	DirectX::XMMATRIX m_OrthoMatrix;	
 
-	std::vector<IDXGIAdapter*> m_VideoAdapterList;
+	//std::vector<IDXGIAdapter*> m_VideoAdapterList;
 	int m_VideoMemory;
 	char m_VideoCardDesc[128];
 };
 
+static std::vector<IDXGIAdapter1*> gDXGIAdapters;
 #endif
