@@ -27,9 +27,12 @@ bool DXGIDuplication::GetFrame()
 	DXGI_OUTDUPL_FRAME_INFO frameInfo;
 
 	ZeroMemory(&frameInfo, sizeof(DXGI_OUTDUPL_FRAME_INFO));
-	hr = m_DesktopDuplication->AcquireNextFrame(500, &frameInfo, &desktopResource);
+	hr = m_DesktopDuplication->AcquireNextFrame(250, &frameInfo, &desktopResource);
 	if (FAILED(hr)) {
-		DebugOut("IDXGIOutputDuplication::AcquireNextFrame failed!\n");
+		_com_error err(hr);
+		const wchar_t *errorString = err.ErrorMessage();
+		DebugOutW(L"IDXGIOutputDuplication::AcquireNextFrame failed! %s\n", errorString);
+
 		return false;
 	}
 

@@ -133,6 +133,7 @@
     <ClInclude Include="rendercore.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="appsystem.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="tcmath.h" />
     <ClInclude Include="texture.h" />
@@ -144,6 +145,9 @@
       <FileType>Document</FileType>
     </None>
     <None Include="simple.vs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="TinyCap.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,5 +1,6 @@
 #include "appsystem.h"
 #include "util.h"
+#include "resource.h"
 
 AppSystem::AppSystem() { };
 
@@ -107,10 +108,11 @@ void AppSystem::InitializeWindows(int screenWidth, int screenHeight)
 	wc.hIconSm = wc.hIcon;
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);	
+	//wc.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);
 	wc.lpszMenuName = NULL;
 	wc.lpszClassName = m_AppName;
 	wc.cbSize = sizeof(WNDCLASSEX);
-
+		
 	RegisterClassEx(&wc);
 	
 	posX = (GetSystemMetrics(SM_CXSCREEN) - screenWidth) / 2;
@@ -125,6 +127,8 @@ void AppSystem::InitializeWindows(int screenWidth, int screenHeight)
 	SetForegroundWindow(m_hWnd);
 	SetFocus(m_hWnd);
 	ShowCursor(true);
+	
+	HMENU mainMenu = CreateMenu();
 
 	DebugOut("Application %ls started\n", m_AppName);
 }; 
