@@ -4,6 +4,7 @@
 #include "rendercore.h"
 
 class DXGIDuplication {
+
 public:
 	DXGIDuplication();
 	~DXGIDuplication();
@@ -12,7 +13,7 @@ public:
 	bool GetFrame();
 	bool FinishFrame();
 	ID3D11Texture2D *GetTexture();
-
+	
 private:
 	IDXGIOutputDuplication *m_DesktopDuplication;
 	ID3D11Texture2D *m_AcquiredDesktopImage;

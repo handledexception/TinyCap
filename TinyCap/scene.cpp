@@ -8,13 +8,19 @@ Scene::Scene()
 	m_VertexBuffer = nullptr;
 };
 
-Scene::Scene(ID3D11Device *device, ID3D11DeviceContext *context)
+Scene::Scene(ID3D11Device *device, ID3D11DeviceContext *context, int displayWidth, int displayHeight)
 {	
+	m_ScreenWidth = displayWidth;
+	m_ScreenHeight = displayHeight;
+
 	m_VertexLayout = nullptr;
 	m_VertexBuffer = nullptr;
 
 	m_D3D11Device = device;
 	m_D3D11Context = context;	
+
+	m_SceneTexture = new Texture();
+	m_SceneTextureShader = new TextureShader(m_D3D11Device, m_D3D11Context);
 
 	if (!InitVertexBuffer()) {
 		DebugOut("Error initializing Vertex Buffer!\n");
@@ -32,7 +38,7 @@ Scene::~Scene()
 };
 
 
-void Scene::Render()
+void Scene::Render(ID3D11Texture2D *texture, const DirectX::XMMATRIX &world, const DirectX::XMMATRIX &projection)
 {
 	if (m_D3D11Context && m_VertexBuffer) {
 		// set vertex buffer
@@ -45,6 +51,9 @@ void Scene::Render()
 	else {
 		DebugOut("Error rendering Scene! No D3D11 Device Context or no Vertex Buffer Created!\n");
 	}
+
+	m_SceneTexture->Init(m_D3D11Device, m_D3D11Context, texture);
+	m_SceneTextureShader->Render(m_D3D11Context, world, projection, m_SceneTexture->GetTexture());
 };
 
 bool Scene::InitVertexBuffer()
@@ -92,19 +101,19 @@ bool Scene::InitVertexBuffer()
 	return true;
 };
 
-bool Scene::UpdateVertexBuffer(int posx, int posy, int screenWidth, int screenHeight)
+bool Scene::UpdateVertexBuffer(int posx, int posy, int width, int height)
 {
 	HRESULT hr;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;	
 	vertex_t *vertices;
 	rectf bitmapRect;
-	
-	m_PixelWidth = 1280;
-	m_PixelHeight = 720;
 
-	bitmapRect.left  = (float)((screenWidth / 2) * -1.f) + (float)posx;	
+	m_PixelWidth = width;
+	m_PixelHeight = height;
+
+	bitmapRect.left  = (float)((m_ScreenWidth / 2) * -1.f) + (float)posx;	
 	bitmapRect.right = bitmapRect.left + (float)m_PixelWidth;
-	bitmapRect.top = (float)(screenHeight / 2) - (float)posy;
+	bitmapRect.top = (float)(m_ScreenHeight / 2) - (float)posy;
 	bitmapRect.bottom = bitmapRect.top - (float)m_PixelHeight;
 
 	vertices = new vertex_t[6];

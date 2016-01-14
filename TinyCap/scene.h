@@ -5,6 +5,7 @@
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 #include "tcmath.h"
+#include "texture.h"
 #include "textureshader.h"
 #include "util.h"
 
@@ -18,11 +19,12 @@ private:
 
 public:
 	Scene();
-	Scene(ID3D11Device *, ID3D11DeviceContext *);
+	Scene(ID3D11Device *, ID3D11DeviceContext *, int, int);
 	~Scene();
 
-	void Render();
+	void Render(ID3D11Texture2D *, const DirectX::XMMATRIX &, const DirectX::XMMATRIX &);	
 	bool UpdateVertexBuffer(int, int, int, int);
+	
 
 private:
 	bool InitVertexBuffer();
@@ -38,6 +40,9 @@ private:
 
 	ID3D11Device *m_D3D11Device;
 	ID3D11DeviceContext *m_D3D11Context;
+
+	Texture *m_SceneTexture;
+	TextureShader *m_SceneTextureShader;
 };
 
 #endif

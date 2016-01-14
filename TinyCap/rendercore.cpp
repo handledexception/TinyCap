@@ -7,9 +7,8 @@
 #include "scene.h"
 #include "util.h"
 
-Scene *gScene;
-Texture *gDesktopTexture;
-static DXGIDuplication *duper;
+Scene *gScene, *gScene2;
+DXGIDuplication *desktopDuper;
 
 RenderCore::RenderCore() { };
 
@@ -309,13 +308,12 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 		return false;
 	}
 	
-	gScene = new Scene(GetDevice(), GetDeviceContext());
+	gScene = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);
+	gScene2 = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);
 	m_TextureShader = new TextureShader(GetDevice(), GetDeviceContext()); // this should actually go in Scene class not Rendercore
 
-	duper = new DXGIDuplication;
-	if (!duper->Init(adapterOutput1, GetDevice())) { return false; }
-
-	gDesktopTexture = new Texture();
+	desktopDuper = new DXGIDuplication();
+	if (!desktopDuper->Init(adapterOutput1, GetDevice())) { return false; }
 
 	return true;
 };
@@ -324,6 +322,9 @@ void RenderCore::Shutdown()
 {
 	delete gScene;
 	gScene = nullptr;
+
+	delete gScene2;
+	gScene2 = nullptr;
 
 	if (m_d3d11DepthStencilState) { m_d3d11DepthStencilState->Release(); }
 	if (m_d3d11DepthStencilDisabledState) { m_d3d11DepthStencilDisabledState->Release(); }
@@ -338,19 +339,23 @@ void RenderCore::Shutdown()
 
 bool RenderCore::Render()
 {
-	ID3D11DeviceContext *ctx = this->GetDeviceContext();
-
 	BeginScene(0.0f, 0.125f, 0.3f, 1.0f);
 	
 	ZBufferState(0);
-
-	if (!gScene->UpdateVertexBuffer(0, 0, 1280, 720)) {
+	
+	if (!gScene->UpdateVertexBuffer(0, 0, 960, 540) || !gScene2->UpdateVertexBuffer(640, 360, 640, 360)) {
 		DebugOut("Scene::UpdateVertexBuffer failed!\n");
 		return false;
 	}
-	
-	gScene->Render();
 
+	
+	
+	if (desktopDuper->GetFrame()) {
+		gScene->Render(desktopDuper->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
+		gScene2->Render(desktopDuper->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
+		desktopDuper->FinishFrame();
+	}
+	
 	/* const vec3f eyePosition(0.f, 0.f, 0.f);
 	const vec3f lookAt(0.f, 0.f, 1.f);
 	const vec3f upDir(0.f, 1.f, 0.f);
@@ -358,12 +363,6 @@ bool RenderCore::Render()
 	DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixLookAtLH(   DirectX::XMLoadFloat3((const DirectX::XMFLOAT3 *)&eyePosition),
 	DirectX::XMLoadFloat3((const DirectX::XMFLOAT3 *)&lookAt),
 	DirectX::XMLoadFloat3((const DirectX::XMFLOAT3 *)&upDir)); */		
-	
-	if (duper->GetFrame()) {
-		gDesktopTexture->Init(m_d3d11Device, m_d3d11DeviceContext, duper->GetTexture());
-		m_TextureShader->Render(ctx, m_WorldMatrix, m_OrthoMatrix, gDesktopTexture->GetTexture());
-		duper->FinishFrame();
-	} 
 	
 	//ZBufferState(1);
 
