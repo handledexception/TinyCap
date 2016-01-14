@@ -3,10 +3,13 @@
 
 #include "dxgi_duplication.h"
 #include "rendercore.h"
+#include "texture.h"
 #include "scene.h"
 #include "util.h"
 
 Scene *gScene;
+Texture *gDesktopTexture;
+static DXGIDuplication *duper;
 
 RenderCore::RenderCore() { };
 
@@ -305,12 +308,14 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	{
 		return false;
 	}
-
+	
 	gScene = new Scene(GetDevice(), GetDeviceContext());
 	m_TextureShader = new TextureShader(GetDevice(), GetDeviceContext()); // this should actually go in Scene class not Rendercore
 
-	DXGIDuplication *duper = new DXGIDuplication;
+	duper = new DXGIDuplication;
 	if (!duper->Init(adapterOutput1, GetDevice())) { return false; }
+
+	gDesktopTexture = new Texture();
 
 	return true;
 };
@@ -352,9 +357,12 @@ bool RenderCore::Render()
 
 	DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixLookAtLH(   DirectX::XMLoadFloat3((const DirectX::XMFLOAT3 *)&eyePosition),
 	DirectX::XMLoadFloat3((const DirectX::XMFLOAT3 *)&lookAt),
-	DirectX::XMLoadFloat3((const DirectX::XMFLOAT3 *)&upDir)); */
+	DirectX::XMLoadFloat3((const DirectX::XMFLOAT3 *)&upDir)); */		
+	
+	duper->GetFrame();
 
-	m_TextureShader->Render(ctx, m_WorldMatrix, m_OrthoMatrix, NULL);
+	gDesktopTexture->Init(m_d3d11Device, m_d3d11DeviceContext, duper->GetTexture());
+	m_TextureShader->Render(ctx, m_WorldMatrix, m_OrthoMatrix, gDesktopTexture->GetTexture());
 	ZBufferState(1);
 
 	EndScene();

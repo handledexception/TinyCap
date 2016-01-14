@@ -24,7 +24,7 @@ TextureShader::TextureShader(ID3D11Device *device, ID3D11DeviceContext *context)
 TextureShader::~TextureShader() { };
 
 void TextureShader::Render(ID3D11DeviceContext *context, const DirectX::XMMATRIX &world, const DirectX::XMMATRIX &projection, ID3D11ShaderResourceView *texture)
-{
+{	
 	SetParameters(context, world, projection, texture);
 
 	context->IASetInputLayout(m_VertexLayout);
@@ -196,7 +196,7 @@ bool TextureShader::SetParameters(ID3D11DeviceContext *context, const DirectX::X
 	context->Unmap(m_MatrixBuffer, 0);
 
 	bufferNumber = 0;
-
+		
 	context->VSSetConstantBuffers(bufferNumber, 1, &m_MatrixBuffer);
 	context->PSSetShaderResources(0, 1, &texture);
 

@@ -8,18 +8,18 @@ class Texture
 {
 public:
 	Texture();
-	Texture(const Texture &);
 	~Texture();
 
-	bool Init(ID3D11Device *, WCHAR *);
+	bool Init(ID3D11Device *, ID3D11DeviceContext *, ID3D11Texture2D *);
 	void Shutdown();
 	
 	ID3D11ShaderResourceView *GetTexture();
-
+	
 private:
 	unsigned char *m_TextureData;
-	ID3D11Texture2D *m_Texture;
+
 	ID3D11ShaderResourceView *m_TextureView;
+	ID3D11Texture2D *m_Texture;
 };
 
 #endif
