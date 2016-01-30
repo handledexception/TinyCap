@@ -6,6 +6,7 @@
 #include "texture.h"
 #include "scene.h"
 #include "util.h"
+#include "timing.h"
 
 Scene *gScene, *gScene2;
 DXGIDuplication *desktopDuper;
@@ -339,6 +340,9 @@ void RenderCore::Shutdown()
 
 bool RenderCore::Render()
 {
+	HighResolutionTimer timer;
+	timer.Start();
+
 	BeginScene(0.0f, 0.125f, 0.3f, 1.0f);
 	
 	ZBufferState(0);
@@ -367,6 +371,8 @@ bool RenderCore::Render()
 	//ZBufferState(1);
 
 	EndScene();
+
+	double timez = timer.AsMilliseconds();
 
 	return true;
 };
