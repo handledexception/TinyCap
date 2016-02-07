@@ -54,9 +54,7 @@ private:
 	ID3D11DepthStencilState *m_d3d11DepthStencilState;
 	ID3D11DepthStencilState *m_d3d11DepthStencilDisabledState;
 	ID3D11DepthStencilView *m_d3d11DepthStencilView;
-	ID3D11RasterizerState *m_d3d11RasterState;
-
-	TextureShader *m_TextureShader;
+	ID3D11RasterizerState *m_d3d11RasterState;	
 
 	DirectX::XMMATRIX m_WorldMatrix;
 	DirectX::XMMATRIX m_ProjectionMatrix;	

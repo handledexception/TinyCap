@@ -86,7 +86,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;d3dcompiler.lib;Mfplat.lib	;Mfuuid.lib;Evr.lib;Mfreadwrite.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -119,6 +119,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="dxgi_duplication.cpp" />
+    <ClCompile Include="mf_h264_encoder.cpp" />
     <ClCompile Include="rendercore.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="appsystem.cpp" />
@@ -131,6 +132,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dxgi_duplication.h" />
+    <ClInclude Include="mf_h264_encoder.h" />
     <ClInclude Include="rendercore.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="appsystem.h" />

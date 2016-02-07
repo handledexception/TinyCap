@@ -12,11 +12,11 @@ public:
 	bool Init(IDXGIOutput1 *, ID3D11Device *);
 	bool GetFrame();
 	bool FinishFrame();
-	ID3D11Texture2D *GetTexture();
-	
+	ID3D11Texture2D *GetTexture();	
+
 private:
 	IDXGIOutputDuplication *m_DesktopDuplication;
-	ID3D11Texture2D *m_AcquiredDesktopImage;
+	ID3D11Texture2D *m_AcquiredDesktopImage;	 
 };
 
 #endif

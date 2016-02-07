@@ -5,11 +5,23 @@
 #include "rendercore.h"
 #include "texture.h"
 #include "scene.h"
+#include "mf_h264_encoder.h"
 #include "util.h"
 #include "timing.h"
 
-Scene *gScene, *gScene2;
-DXGIDuplication *desktopDuper;
+#define MAX_FPS 30
+const double MAX_FRAME_TIME = (double)(1.f / MAX_FPS * 1000.f);
+double accumulator = 0.0f;
+
+////
+//// globals
+////
+DXGIDuplication *g_DesktopDuplication;
+Scene *g_Scene; // , *gScene2;
+MF_H264_Encoder *g_MFEncoder;
+////
+////
+////
 
 RenderCore::RenderCore() { };
 
@@ -309,23 +321,35 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 		return false;
 	}
 	
-	gScene = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);
-	gScene2 = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);
-	m_TextureShader = new TextureShader(GetDevice(), GetDeviceContext()); // this should actually go in Scene class not Rendercore
+	// Scene is a textured quad to draw on
+	g_Scene = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);
+	//gScene2 = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);	
 
-	desktopDuper = new DXGIDuplication();
-	if (!desktopDuper->Init(adapterOutput1, GetDevice())) { return false; }
+	// new DXGI Desktop Duplication object
+	g_DesktopDuplication = new DXGIDuplication();
+	if (!g_DesktopDuplication->Init(adapterOutput1, GetDevice())) { DebugOut("Failed to init DXGI Desktop Duplication API!\n"); return false; }
+
+	g_MFEncoder = new MF_H264_Encoder();
+	if (!g_MFEncoder->Init()) { DebugOut("Failed to init Media Foundation H.264 Encoder!\n"); return false; }
+
+	ZBufferState(0);
 
 	return true;
 };
 
 void RenderCore::Shutdown()
 {
-	delete gScene;
-	gScene = nullptr;
+	delete g_Scene;
+	g_Scene = nullptr;
 
-	delete gScene2;
-	gScene2 = nullptr;
+	delete g_DesktopDuplication;
+	g_DesktopDuplication = nullptr;
+
+	g_MFEncoder->Shutdown();
+	delete g_MFEncoder;
+	g_MFEncoder = nullptr;
+	//delete gScene2;
+	//gScene2 = nullptr;
 
 	if (m_d3d11DepthStencilState) { m_d3d11DepthStencilState->Release(); }
 	if (m_d3d11DepthStencilDisabledState) { m_d3d11DepthStencilDisabledState->Release(); }
@@ -343,21 +367,22 @@ bool RenderCore::Render()
 	HighResolutionTimer timer;
 	timer.Start();
 
-	BeginScene(0.0f, 0.125f, 0.3f, 1.0f);
+	BeginScene(0.0f, 0.125f, 0.3f, 1.0f);	
 	
-	ZBufferState(0);
-	
-	if (!gScene->UpdateVertexBuffer(0, 0, 960, 540) || !gScene2->UpdateVertexBuffer(640, 360, 640, 360)) {
+	// Scene::UpdateVertexBuffer allows us to position the Scene
+	if (	!g_Scene->UpdateVertexBuffer(0, 0, 1280, 720)
+		/* || !gScene2->UpdateVertexBuffer(640, 360, 640, 360) */) {
 		DebugOut("Scene::UpdateVertexBuffer failed!\n");
 		return false;
-	}
-
+	}	
 	
-	
-	if (desktopDuper->GetFrame()) {
-		gScene->Render(desktopDuper->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
-		gScene2->Render(desktopDuper->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
-		desktopDuper->FinishFrame();
+	// Get Desktop Duplication frame
+	if (g_DesktopDuplication->GetFrame()) {
+		// Render Desktop Duplication frame onto our Scene
+		g_Scene->Render(g_DesktopDuplication->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
+		g_MFEncoder->WriteFrame(g_DesktopDuplication->GetTexture());
+		//gScene2->Render(desktopDuper->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
+		g_DesktopDuplication->FinishFrame();
 	}
 	
 	/* const vec3f eyePosition(0.f, 0.f, 0.f);
@@ -369,10 +394,13 @@ bool RenderCore::Render()
 	DirectX::XMLoadFloat3((const DirectX::XMFLOAT3 *)&upDir)); */		
 	
 	//ZBufferState(1);
-
+	double timez = timer.AsMilliseconds();
+	while (timez < (MAX_FRAME_TIME)) {
+		timez += 0.1f;
+	}
 	EndScene();
 
-	double timez = timer.AsMilliseconds();
+
 
 	return true;
 };
