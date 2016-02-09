@@ -23,18 +23,23 @@ class MF_H264_Encoder {
 
 public:
 	MF_H264_Encoder();
+	MF_H264_Encoder(ID3D11Device *device, ID3D11DeviceContext *ctx);
 	~MF_H264_Encoder();
 
 	bool Init();	
 	void WriteFrame(ID3D11Texture2D *videoSurface);
 	void Shutdown();
-
-	IMFSinkWriter *m_SinkWriter;
+	
 	DWORD m_StreamIndex;
 	LONGLONG m_TimeStamp;
 
 private:
 	bool InitSinkWriter();
+	IMFSinkWriter *m_SinkWriter;
+
+private:
+	ID3D11Device *m_D3D11Device;
+	ID3D11DeviceContext *m_D3D11Context;
 	
 	
 };

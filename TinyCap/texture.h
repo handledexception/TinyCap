@@ -13,8 +13,9 @@ public:
 	bool Init(ID3D11Device *, ID3D11DeviceContext *, ID3D11Texture2D *);
 	void Shutdown();
 	
-	ID3D11ShaderResourceView *GetTexture();
-	
+	ID3D11ShaderResourceView *GetSRV();
+	ID3D11Texture2D *GetTexture2D();
+
 private:
 	unsigned char *m_TextureData;
 

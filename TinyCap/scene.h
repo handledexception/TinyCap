@@ -24,7 +24,6 @@ public:
 
 	void Render(ID3D11Texture2D *, const DirectX::XMMATRIX &, const DirectX::XMMATRIX &);	
 	bool UpdateVertexBuffer(int, int, int, int);
-	
 
 private:
 	bool InitVertexBuffer();

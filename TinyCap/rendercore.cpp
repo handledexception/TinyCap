@@ -10,7 +10,7 @@
 #include "timing.h"
 
 #define MAX_FPS 30
-const double MAX_FRAME_TIME = (double)(1.f / MAX_FPS * 1000.f);
+const double MAX_FRAME_TIME = (double)(1.00f / MAX_FPS * 1000.00f);
 double accumulator = 0.0f;
 
 ////
@@ -329,7 +329,7 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	g_DesktopDuplication = new DXGIDuplication();
 	if (!g_DesktopDuplication->Init(adapterOutput1, GetDevice())) { DebugOut("Failed to init DXGI Desktop Duplication API!\n"); return false; }
 
-	g_MFEncoder = new MF_H264_Encoder();
+	g_MFEncoder = new MF_H264_Encoder(m_d3d11Device, m_d3d11DeviceContext);
 	if (!g_MFEncoder->Init()) { DebugOut("Failed to init Media Foundation H.264 Encoder!\n"); return false; }
 
 	ZBufferState(0);
@@ -370,7 +370,7 @@ bool RenderCore::Render()
 	BeginScene(0.0f, 0.125f, 0.3f, 1.0f);	
 	
 	// Scene::UpdateVertexBuffer allows us to position the Scene
-	if (	!g_Scene->UpdateVertexBuffer(0, 0, 1280, 720)
+	if (!g_Scene->UpdateVertexBuffer(0, 0, 1280, 720)
 		/* || !gScene2->UpdateVertexBuffer(640, 360, 640, 360) */) {
 		DebugOut("Scene::UpdateVertexBuffer failed!\n");
 		return false;
@@ -385,6 +385,14 @@ bool RenderCore::Render()
 		g_DesktopDuplication->FinishFrame();
 	}
 	
+	double timez = timer.AsMilliseconds();
+	while (timez < (MAX_FRAME_TIME)) {
+		timez += 0.001f;
+	}
+	DebugOut("frame time: %f\n", timez);
+
+	EndScene();
+
 	/* const vec3f eyePosition(0.f, 0.f, 0.f);
 	const vec3f lookAt(0.f, 0.f, 1.f);
 	const vec3f upDir(0.f, 1.f, 0.f);
@@ -394,13 +402,6 @@ bool RenderCore::Render()
 	DirectX::XMLoadFloat3((const DirectX::XMFLOAT3 *)&upDir)); */		
 	
 	//ZBufferState(1);
-	double timez = timer.AsMilliseconds();
-	while (timez < (MAX_FRAME_TIME)) {
-		timez += 0.1f;
-	}
-	EndScene();
-
-
 
 	return true;
 };

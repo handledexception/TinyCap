@@ -3,10 +3,12 @@
 unsigned long pixelbuf[640 * 360];
 
 
-MF_H264_Encoder::MF_H264_Encoder()
+MF_H264_Encoder::MF_H264_Encoder(ID3D11Device *device, ID3D11DeviceContext *ctx)
 :
 m_SinkWriter(0)
 { 
+	m_D3D11Device = device;
+	m_D3D11Context = ctx;
 	m_StreamIndex = 0;
 	m_TimeStamp = 0;
 };
@@ -77,30 +79,57 @@ bool MF_H264_Encoder::InitSinkWriter()
 void MF_H264_Encoder::WriteFrame(ID3D11Texture2D *videoSurface)
 {
 	HRESULT hr;
-	IMFSample *pSample = NULL;
-	IMFMediaBuffer *pMediaBuffer = NULL;	
-	IMF2DBuffer *pBuffer2D = NULL; 
+	IMFSample *pSample = nullptr;
+	IMFMediaBuffer *pMediaBuffer = nullptr;	
+	IMF2DBuffer *pBuffer2D = nullptr; 
 	DWORD length;
 	
-	hr = MFCreateDXGISurfaceBuffer(__uuidof(ID3D11Texture2D), videoSurface,  0, false, &pMediaBuffer);	
-	hr = pMediaBuffer->QueryInterface(__uuidof(IMF2DBuffer), reinterpret_cast<void **>(&pBuffer2D));	
-	hr = pBuffer2D->GetContiguousLength(&length);	
-	hr = pMediaBuffer->SetCurrentLength(length);
-	
-	hr = MFCreateVideoSampleFromSurface(NULL, &pSample);
-	//hr = MFCreateSample(&pSample);	
-	hr = pSample->AddBuffer(pMediaBuffer);	
-	hr = pSample->SetSampleTime(m_TimeStamp);
-	hr = pSample->SetSampleDuration(VIDEO_FRAME_DURATION);
+	D3D11_TEXTURE2D_DESC srcDesc;
+	D3D11_TEXTURE2D_DESC destDesc;
+	ID3D11Texture2D *destTexture = nullptr;
 
-	hr = m_SinkWriter->WriteSample(m_StreamIndex, pSample);
+	if (videoSurface) {
+		
+			videoSurface->GetDesc(&srcDesc);
 
-	m_TimeStamp += VIDEO_FRAME_DURATION;
+			ZeroMemory(&destDesc, sizeof(destDesc));
+			destDesc.ArraySize = 1;
+			destDesc.BindFlags = 0;
+			destDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			destDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+			destDesc.Height = srcDesc.Height;
+			destDesc.MipLevels = 1;
+			destDesc.MiscFlags = 0;
+			destDesc.SampleDesc = srcDesc.SampleDesc;
+			destDesc.Usage = D3D11_USAGE_STAGING;
+			destDesc.Width = srcDesc.Width;
+			m_D3D11Device->CreateTexture2D(&destDesc, nullptr, &destTexture);
+			m_D3D11Context->CopyResource(destTexture, videoSurface);
+			//D3D11_MAPPED_SUBRESOURCE mapResource;
+			//m_D3D11Context->Map(videoSurface, 0, D3D11_MAP_READ, 0, &mapResource);
+		
 
-	pSample->Release();
-	pMediaBuffer->Release();
-	pBuffer2D->Release();
+		hr = MFCreateDXGISurfaceBuffer(__uuidof(ID3D11Texture2D), destTexture, 0, false, &pMediaBuffer);
+		hr = pMediaBuffer->QueryInterface(__uuidof(IMF2DBuffer), reinterpret_cast<void **>(&pBuffer2D));
+		hr = pBuffer2D->GetContiguousLength(&length);
+		hr = pMediaBuffer->SetCurrentLength(length);
 
+		hr = MFCreateVideoSampleFromSurface(nullptr, &pSample);
+		//hr = MFCreateSample(&pSample);	
+		hr = pSample->AddBuffer(pMediaBuffer);
+		hr = pSample->SetSampleTime(m_TimeStamp);
+		hr = pSample->SetSampleDuration(VIDEO_FRAME_DURATION);
+
+		hr = m_SinkWriter->WriteSample(m_StreamIndex, pSample);
+
+		m_TimeStamp += VIDEO_FRAME_DURATION;
+
+		destTexture->Release();
+		destTexture = nullptr;
+		pSample->Release();
+		pMediaBuffer->Release();
+		pBuffer2D->Release();
+	}
 	/* BYTE *pData = NULL;
 	const LONG cbWidth = 4 * 640;
 	const DWORD cbBuffer = cbWidth * 360;
@@ -120,8 +149,6 @@ void MF_H264_Encoder::WriteFrame(ID3D11Texture2D *videoSurface)
 	m_TimeStamp += VIDEO_FRAME_DURATION;
 	pSample->Release();
 	pMediaBuffer->Release(); */
-
-
 }
 
 void MF_H264_Encoder::Shutdown()

@@ -41,7 +41,12 @@ bool Texture::Init(ID3D11Device *device, ID3D11DeviceContext *context, ID3D11Tex
 	return true;
 };
 
-ID3D11ShaderResourceView *Texture::GetTexture()
+ID3D11ShaderResourceView *Texture::GetSRV()
 {
 	return m_TextureView;
+};
+
+ID3D11Texture2D *Texture::GetTexture2D()
+{
+	return m_Texture;
 };

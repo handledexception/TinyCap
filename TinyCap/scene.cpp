@@ -52,8 +52,9 @@ void Scene::Render(ID3D11Texture2D *texture, const DirectX::XMMATRIX &world, con
 		DebugOut("Error rendering Scene! No D3D11 Device Context or no Vertex Buffer Created!\n");
 	}
 
-	m_SceneTexture->Init(m_D3D11Device, m_D3D11Context, texture);
-	m_SceneTextureShader->Render(m_D3D11Context, world, projection, m_SceneTexture->GetTexture());
+	m_SceneTexture->Init(m_D3D11Device, m_D3D11Context, texture);	
+	m_SceneTextureShader->Render(m_D3D11Context, world, projection, m_SceneTexture->GetSRV());
+	
 };
 
 bool Scene::InitVertexBuffer()
