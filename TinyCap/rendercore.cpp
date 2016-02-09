@@ -9,7 +9,7 @@
 #include "util.h"
 #include "timing.h"
 
-#define MAX_FPS 60
+#define MAX_FPS 30
 const double MAX_FRAME_TIME = (double)(1.00f / MAX_FPS * 1000.00f);
 double accumulator = 0.0f;
 
@@ -17,7 +17,7 @@ double accumulator = 0.0f;
 //// globals
 ////
 DXGIDuplication *g_DesktopDuplication;
-Scene *g_Scene; // , *gScene2;
+Scene *g_Scene, *g_Scene2;
 MF_H264_Encoder *g_MFEncoder;
 ////
 ////
@@ -84,7 +84,7 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	// desktop duplication stuff
 	hr = adapterOutput->QueryInterface(&adapterOutput1);
 	
-	hr = adapterOutput1->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
+	hr = adapterOutput1->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, nullptr);
 	if (FAILED(hr)) {
 		return false;
 	}
@@ -163,8 +163,8 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	};
 	uint32_t numFeatureLevels = ARRAYSIZE(featureLevels);
 
-	hr = D3D11CreateDeviceAndSwapChain(		NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, deviceFlags, featureLevels, numFeatureLevels,
-											D3D11_SDK_VERSION, &swapChainDesc, &m_SwapChain, &m_d3d11Device, NULL, &m_d3d11DeviceContext);
+	hr = D3D11CreateDeviceAndSwapChain(		nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceFlags, featureLevels, numFeatureLevels,
+											D3D11_SDK_VERSION, &swapChainDesc, &m_SwapChain, &m_d3d11Device, nullptr, &m_d3d11DeviceContext);
 	if (FAILED(hr)) { 
 		DebugOut("D3D11CreateDeviceAndSwapChain failed!\n");
 		return false;
@@ -191,7 +191,7 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	}
 
 	// create render target view from back buffer
-	hr = m_d3d11Device->CreateRenderTargetView(pBackBuffer, NULL, &m_d3d11RenderTargetView);
+	hr = m_d3d11Device->CreateRenderTargetView(pBackBuffer, nullptr, &m_d3d11RenderTargetView);
 	if (FAILED(hr)) {
 		DebugOut("ID3D11Device::CreateRenderTargetView failed!\n");
 		return false;
@@ -213,7 +213,7 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	depthBufferDesc.MiscFlags = 0;
 
 	// create texture for depth buffer
-	hr = m_d3d11Device->CreateTexture2D(&depthBufferDesc, NULL, &m_d3d11DepthStencilBuffer);
+	hr = m_d3d11Device->CreateTexture2D(&depthBufferDesc, nullptr, &m_d3d11DepthStencilBuffer);
 	if (FAILED(hr)) {
 		DebugOut("ID3D11Device::CreateTexture2D failed! Could not create texture for depth buffer.\n");
 		return false;
@@ -290,7 +290,7 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	
 	
 	// temp set render targets
-	//m_d3d11DeviceContext->OMSetRenderTargets(1, &m_d3d11RenderTargetView, NULL);
+	//m_d3d11DeviceContext->OMSetRenderTargets(1, &m_d3d11RenderTargetView, nullptr);
 
 	// set up viewport for rendering
 	D3D11_VIEWPORT viewport;
@@ -337,7 +337,7 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	
 	// Scene is a textured quad to draw on
 	g_Scene = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);
-	//gScene2 = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);	
+	g_Scene2 = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);	
 
 	// new DXGI Desktop Duplication object
 	g_DesktopDuplication = new DXGIDuplication();
@@ -363,8 +363,8 @@ void RenderCore::Shutdown()
 	g_MFEncoder->Shutdown();
 	delete g_MFEncoder;
 	g_MFEncoder = nullptr;
-	//delete gScene2;
-	//gScene2 = nullptr;
+	delete g_Scene2;
+	g_Scene2 = nullptr;
 
 	if (m_d3d11DepthStencilState) { m_d3d11DepthStencilState->Release(); }
 	if (m_d3d11DepthStencilDisabledState) { m_d3d11DepthStencilDisabledState->Release(); }
@@ -385,7 +385,7 @@ bool RenderCore::Render()
 	BeginScene(0.0f, 0.125f, 0.3f, 1.0f);	
 	
 	// Scene::UpdateVertexBuffer allows us to position the Scene
-	if (!g_Scene->UpdateVertexBuffer(0, 0, 1280, 720)) {		
+	if (!g_Scene->UpdateVertexBuffer(0, 0, 1280, 720)  || !g_Scene2->UpdateVertexBuffer(100, 100, 640, 360)) {	
 		DebugOut("Scene::UpdateVertexBuffer failed!\n");
 		return false;
 	}	 
@@ -394,8 +394,10 @@ bool RenderCore::Render()
 	if (g_DesktopDuplication->GetFrame() == true) {
 		// Render Desktop Duplication frame onto our Scene
 		g_Scene->Render(g_DesktopDuplication->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
+		//g_Scene2->Render(g_DesktopDuplication->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
+
 		g_MFEncoder->WriteFrame(g_DesktopDuplication->GetTexture());
-		//gScene2->Render(desktopDuper->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
+		
 		g_DesktopDuplication->FinishFrame();
 	}
 	
@@ -471,7 +473,7 @@ void RenderCore::ZBufferState(int state)
 bool RenderCore::EnumerateDisplayAdapters(std::vector<IDXGIAdapter1 *> *dxgiAdapters)
 {
 	IDXGIAdapter1 *pAdapter;
-	IDXGIFactory1 *pFactory = NULL;
+	IDXGIFactory1 *pFactory = nullptr;
 	HRESULT hr;
 
 	hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&pFactory);

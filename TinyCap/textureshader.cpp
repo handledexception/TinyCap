@@ -28,8 +28,8 @@ void TextureShader::Render(ID3D11DeviceContext *context, const DirectX::XMMATRIX
 	SetParameters(context, world, projection, texture);
 
 	context->IASetInputLayout(m_VertexLayout);
-	context->VSSetShader(m_VertexShader, NULL, 0);
-	context->PSSetShader(m_PixelShader, NULL, 0);
+	context->VSSetShader(m_VertexShader, nullptr, 0);
+	context->PSSetShader(m_PixelShader, nullptr, 0);
 	context->PSSetSamplers(0, 1, &m_SamplerState);
 	context->Draw(6, 0); // always drawing two triangles, can update this to DrawIndexed eventually
 };
@@ -37,33 +37,33 @@ void TextureShader::Render(ID3D11DeviceContext *context, const DirectX::XMMATRIX
 bool TextureShader::CompileShaders()
 {
 	HRESULT hr;
-	ID3DBlob *errorsBlob = NULL;
+	ID3DBlob *errorsBlob = nullptr;
 	
-	m_vsBlob = NULL;
-	m_psBlob = NULL;
+	m_vsBlob = nullptr;
+	m_psBlob = nullptr;
 
 	// compile vertex shader from file
-	hr = D3DCompileFromFile(L"simple.vs", NULL, NULL, "TextureVertexShader", "vs_4_0", D3DCOMPILE_DEBUG, 0, &m_vsBlob, &errorsBlob);
+	hr = D3DCompileFromFile(L"simple.vs", nullptr, nullptr, "TextureVertexShader", "vs_4_0", D3DCOMPILE_DEBUG, 0, &m_vsBlob, &errorsBlob);
 	if (FAILED(hr)) {
 		DebugOut("Vertex Shader compilation failed!\n");
 		
-		if (errorsBlob != NULL) {
+		if (errorsBlob != nullptr) {
 			DebugOut("ID3DBlob error: %s\n", (char *)errorsBlob->GetBufferPointer());
 			errorsBlob->Release();
-			errorsBlob = NULL;
+			errorsBlob = nullptr;
 		}
 
 		return false;
 	}
 
 	// compile pixel shader	from file
-	hr = D3DCompileFromFile(L"simple.ps", NULL, NULL, "TexturePixelShader", "ps_4_0", D3DCOMPILE_DEBUG, 0, &m_psBlob, &errorsBlob);
+	hr = D3DCompileFromFile(L"simple.ps", nullptr, nullptr, "TexturePixelShader", "ps_4_0", D3DCOMPILE_DEBUG, 0, &m_psBlob, &errorsBlob);
 	if (FAILED(hr)) {
 		DebugOut("Pixel shader compilation failed!\n");
-		if (errorsBlob != NULL) {
+		if (errorsBlob != nullptr) {
 			DebugOut("ID3DBlob error: %s\n", (char *)errorsBlob->GetBufferPointer());
 			errorsBlob->Release();
-			errorsBlob = NULL;
+			errorsBlob = nullptr;
 		}
 
 		return false;
@@ -77,21 +77,21 @@ bool TextureShader::CreateShaders(ID3D11Device *device)
 	HRESULT hr;
 
 	// create vertex shader object from compiled shader code
-	hr = device->CreateVertexShader(m_vsBlob->GetBufferPointer(), m_vsBlob->GetBufferSize(), NULL, &m_VertexShader);
+	hr = device->CreateVertexShader(m_vsBlob->GetBufferPointer(), m_vsBlob->GetBufferSize(), nullptr, &m_VertexShader);
 	if (FAILED(hr)) {
 		DebugOut("ID3D11Device::CreateVertexShader failed!\n");
 		m_vsBlob->Release();
-		m_psBlob = NULL;
+		m_psBlob = nullptr;
 
 		return false;
 	}
 
 	// create pixel shader
-	hr = device->CreatePixelShader(m_psBlob->GetBufferPointer(), m_psBlob->GetBufferSize(), NULL, &m_PixelShader);	
+	hr = device->CreatePixelShader(m_psBlob->GetBufferPointer(), m_psBlob->GetBufferSize(), nullptr, &m_PixelShader);	
 	if (FAILED(hr)) {
 		DebugOut("ID3D11Device::CreatePixelShader failed!\n");
 		m_psBlob->Release();
-		m_psBlob = NULL;
+		m_psBlob = nullptr;
 
 		return false;
 	}
@@ -120,10 +120,10 @@ bool TextureShader::MakeBuffers(ID3D11Device *device, ID3D11DeviceContext *conte
 	}
 	
 	m_vsBlob->Release();
-	m_vsBlob = NULL;
+	m_vsBlob = nullptr;
 
 	m_psBlob->Release();
-	m_psBlob = NULL;
+	m_psBlob = nullptr;
 
 	// setup description for dynamic matrix constant buffer in the vertex shader
 	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -133,7 +133,7 @@ bool TextureShader::MakeBuffers(ID3D11Device *device, ID3D11DeviceContext *conte
 	matrixBufferDesc.MiscFlags = 0;
 	matrixBufferDesc.StructureByteStride = 0;
 
-	hr = device->CreateBuffer(&matrixBufferDesc, NULL, &m_MatrixBuffer);
+	hr = device->CreateBuffer(&matrixBufferDesc, nullptr, &m_MatrixBuffer);
 	if (FAILED(hr)) {
 		DebugOut("ID3D11Device::CreateBuffer failed when attempting to create Matrix Constant Buffer!\n");
 		return false;

@@ -39,16 +39,15 @@ bool MF_H264_Encoder::Init()
 
 bool MF_H264_Encoder::InitSinkWriter()
 {
-	//IMFSinkWriter *pSinkWriter = NULL;
-	IMFMediaType *pMediaTypeOut = NULL;
-	IMFMediaType *pMediaTypeIn = NULL;
+	IMFMediaType *pMediaTypeOut = nullptr;
+	IMFMediaType *pMediaTypeIn = nullptr;
 
-	HRESULT hr = MFCreateSinkWriterFromURL(L"test.mp4", NULL, NULL, &m_SinkWriter);
+	HRESULT hr = MFCreateSinkWriterFromURL(L"test.mp4", nullptr, nullptr, &m_SinkWriter);
 	hr = MFCreateMediaType(&pMediaTypeOut);
 	hr = pMediaTypeOut->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
 	hr = pMediaTypeOut->SetGUID(MF_MT_SUBTYPE, VIDEO_ENCODING_FORMAT);
-	hr = pMediaTypeOut->SetUINT32(MF_MT_MPEG2_PROFILE, eAVEncH264VProfile::eAVEncH264VProfile_Main);
-	hr = pMediaTypeOut->SetUINT32(MF_MT_MPEG2_LEVEL, eAVEncH264VLevel::eAVEncH264VLevel4_1);
+	hr = pMediaTypeOut->SetUINT32(MF_MT_MPEG2_PROFILE, eAVEncH264VProfile_Main);
+	hr = pMediaTypeOut->SetUINT32(MF_MT_MPEG2_LEVEL, eAVEncH264VLevel4_1);
 	hr = pMediaTypeOut->SetUINT32(MF_MT_AVG_BITRATE, VIDEO_BIT_RATE);
 	hr = pMediaTypeOut->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive);
 	hr = MFSetAttributeSize(pMediaTypeOut, MF_MT_FRAME_SIZE, ENCODED_VIDEO_WIDTH, ENCODED_VIDEO_HEIGHT);
@@ -63,12 +62,11 @@ bool MF_H264_Encoder::InitSinkWriter()
 	hr = MFSetAttributeSize(pMediaTypeIn, MF_MT_FRAME_SIZE, ENCODED_VIDEO_WIDTH, ENCODED_VIDEO_HEIGHT);
 	hr = MFSetAttributeRatio(pMediaTypeIn, MF_MT_FRAME_RATE, VIDEO_FPS_NUMERATOR, VIDEO_FPS_DENOMINATOR);
 	hr = MFSetAttributeRatio(pMediaTypeIn, MF_MT_PIXEL_ASPECT_RATIO, 1, 1);
-	hr = m_SinkWriter->SetInputMediaType(m_StreamIndex, pMediaTypeIn, NULL);
+	hr = m_SinkWriter->SetInputMediaType(m_StreamIndex, pMediaTypeIn, nullptr);
 
 	hr = m_SinkWriter->BeginWriting();
 	m_SinkWriter->AddRef();
 
-	//m_SinkWriter->Release();
 	pMediaTypeOut->Release();
 	pMediaTypeIn->Release();
 
@@ -87,7 +85,7 @@ void MF_H264_Encoder::WriteFrame(ID3D11Texture2D *videoSurface)
 	D3D11_TEXTURE2D_DESC destDesc;
 	m_DestTexture = nullptr;
 
-	if (videoSurface && !m_DestTexture) {
+	if (videoSurface) {
 		videoSurface->GetDesc(&srcDesc);
 
 		ZeroMemory(&destDesc, sizeof(destDesc));
@@ -103,10 +101,10 @@ void MF_H264_Encoder::WriteFrame(ID3D11Texture2D *videoSurface)
 		destDesc.Width = srcDesc.Width;
 
 		m_D3D11Device->CreateTexture2D(&destDesc, nullptr, &m_DestTexture);
-		m_D3D11Context->CopyResource(m_DestTexture, videoSurface);		
-	}
-	
-	if (m_DestTexture) {
+		m_D3D11Context->CopyResource(m_DestTexture, videoSurface);
+
+
+
 		hr = MFCreateDXGISurfaceBuffer(__uuidof(ID3D11Texture2D), m_DestTexture, 0, false, &pMediaBuffer);
 		hr = pMediaBuffer->QueryInterface(__uuidof(IMF2DBuffer), reinterpret_cast<void **>(&pBuffer2D));
 		hr = pBuffer2D->GetContiguousLength(&length);
@@ -133,12 +131,12 @@ void MF_H264_Encoder::WriteFrame(ID3D11Texture2D *videoSurface)
 	}
 	
 	
-	/* BYTE *pData = NULL;
+	/* BYTE *pData = nullptr;
 	const LONG cbWidth = 4 * 640;
 	const DWORD cbBuffer = cbWidth * 360;
 
 	hr = MFCreateMemoryBuffer(cbBuffer, &pMediaBuffer);
-	hr = pMediaBuffer->Lock(&pData, NULL, NULL);
+	hr = pMediaBuffer->Lock(&pData, nullptr, nullptr);
 	hr = MFCopyImage(pData, cbWidth, (BYTE *)pixelbuf, cbWidth, cbWidth, 360);
 	if (pMediaBuffer) {
 		pMediaBuffer->Unlock();

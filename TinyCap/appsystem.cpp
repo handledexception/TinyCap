@@ -44,7 +44,7 @@ void AppSystem::Refresh()
 	ZeroMemory(&msg, sizeof(MSG));
 
 	while (!done) {
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
@@ -104,7 +104,7 @@ void AppSystem::InitializeWindows(int screenWidth, int screenHeight)
 	g_ApplicationHandle = this;
 
 	// instance of this application
-	m_hInstance = GetModuleHandle(NULL);
+	m_hInstance = GetModuleHandle(nullptr);
 	// name of this application
 	m_AppName = L"TinyCap";
 
@@ -113,12 +113,12 @@ void AppSystem::InitializeWindows(int screenWidth, int screenHeight)
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = m_hInstance;
-	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
+	wc.hIcon = LoadIcon(nullptr, IDI_WINLOGO);
 	wc.hIconSm = wc.hIcon;
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);	
 	//wc.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);
-	wc.lpszMenuName = NULL;
+	wc.lpszMenuName = nullptr;
 	wc.lpszClassName = m_AppName;
 	wc.cbSize = sizeof(WNDCLASSEX);
 		
@@ -130,7 +130,7 @@ void AppSystem::InitializeWindows(int screenWidth, int screenHeight)
 	m_hWnd = CreateWindowEx(	WS_EX_APPWINDOW, m_AppName, m_AppName, 
 								WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP, 
 								posX, posY, screenWidth, screenHeight, 
-								NULL, NULL, m_hInstance, NULL);
+								nullptr, nullptr, m_hInstance, nullptr);
 
 	ShowWindow(m_hWnd, SW_SHOW);
 	SetForegroundWindow(m_hWnd);
@@ -145,11 +145,11 @@ void AppSystem::InitializeWindows(int screenWidth, int screenHeight)
 void AppSystem::ShutdownWindows()
 {
 	DestroyWindow(m_hWnd);
-	m_hWnd = NULL;
+	m_hWnd = nullptr;
 
 	UnregisterClass(m_AppName, m_hInstance);
-	m_hInstance = NULL;
-	g_ApplicationHandle = NULL;	
+	m_hInstance = nullptr;
+	g_ApplicationHandle = nullptr;	
 };
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

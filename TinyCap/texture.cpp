@@ -24,7 +24,7 @@ bool Texture::Init(ID3D11Device *device, ID3D11DeviceContext *context, ID3D11Tex
 	copyDesc.CPUAccessFlags = 0;
 	copyDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	
-	hr = device->CreateTexture2D(&copyDesc, NULL, &m_Texture); */
+	hr = device->CreateTexture2D(&copyDesc, nullptr, &m_Texture); */
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderDesc;
 	shaderDesc.Format = frameDesc.Format;
