@@ -40,6 +40,7 @@ private:
 private:
 	ID3D11Device *m_D3D11Device;
 	ID3D11DeviceContext *m_D3D11Context;
+	ID3D11Texture2D *m_DestTexture;
 	
 	
 };

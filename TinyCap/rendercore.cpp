@@ -9,7 +9,7 @@
 #include "util.h"
 #include "timing.h"
 
-#define MAX_FPS 30
+#define MAX_FPS 60
 const double MAX_FRAME_TIME = (double)(1.00f / MAX_FPS * 1000.00f);
 double accumulator = 0.0f;
 
@@ -150,22 +150,36 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 
 	// create swap chain, direct3d device, and d3d context	
 	uint32_t deviceFlags = 0;
-//#define D3D_DEVICE_DEBUG
+#define D3D_DEVICE_DEBUG
 #ifdef D3D_DEVICE_DEBUG
 	deviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
 	D3D_FEATURE_LEVEL featureLevels[] = {
+		D3D_FEATURE_LEVEL_11_1,
 		D3D_FEATURE_LEVEL_11_0,
 		D3D_FEATURE_LEVEL_10_1,
 		D3D_FEATURE_LEVEL_10_0,
 	};
 	uint32_t numFeatureLevels = ARRAYSIZE(featureLevels);
 
-	hr = D3D11CreateDeviceAndSwapChain(		NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, featureLevels, numFeatureLevels,
+	hr = D3D11CreateDeviceAndSwapChain(		NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, deviceFlags, featureLevels, numFeatureLevels,
 											D3D11_SDK_VERSION, &swapChainDesc, &m_SwapChain, &m_d3d11Device, NULL, &m_d3d11DeviceContext);
 	if (FAILED(hr)) { 
 		DebugOut("D3D11CreateDeviceAndSwapChain failed!\n");
+		return false;
+	}
+
+	// enable multithreaded device context protection
+	ID3D10Multithread *contextMT = nullptr;
+	m_d3d11DeviceContext->QueryInterface(&contextMT);
+
+	if (contextMT) {
+		contextMT->SetMultithreadProtected(true);
+		contextMT->Release();
+	}
+	else {
+		DebugOut("Fatal error! ID3D10Multithread::SetMultithreadProtected for D3D11 device context failed!\n");
 		return false;
 	}
 
@@ -329,6 +343,7 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	g_DesktopDuplication = new DXGIDuplication();
 	if (!g_DesktopDuplication->Init(adapterOutput1, GetDevice())) { DebugOut("Failed to init DXGI Desktop Duplication API!\n"); return false; }
 
+	// initialize Media Foundation
 	g_MFEncoder = new MF_H264_Encoder(m_d3d11Device, m_d3d11DeviceContext);
 	if (!g_MFEncoder->Init()) { DebugOut("Failed to init Media Foundation H.264 Encoder!\n"); return false; }
 
@@ -370,14 +385,13 @@ bool RenderCore::Render()
 	BeginScene(0.0f, 0.125f, 0.3f, 1.0f);	
 	
 	// Scene::UpdateVertexBuffer allows us to position the Scene
-	if (!g_Scene->UpdateVertexBuffer(0, 0, 1280, 720)
-		/* || !gScene2->UpdateVertexBuffer(640, 360, 640, 360) */) {
+	if (!g_Scene->UpdateVertexBuffer(0, 0, 1280, 720)) {		
 		DebugOut("Scene::UpdateVertexBuffer failed!\n");
 		return false;
-	}	
+	}	 
 	
 	// Get Desktop Duplication frame
-	if (g_DesktopDuplication->GetFrame()) {
+	if (g_DesktopDuplication->GetFrame() == true) {
 		// Render Desktop Duplication frame onto our Scene
 		g_Scene->Render(g_DesktopDuplication->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
 		g_MFEncoder->WriteFrame(g_DesktopDuplication->GetTexture());
@@ -385,11 +399,12 @@ bool RenderCore::Render()
 		g_DesktopDuplication->FinishFrame();
 	}
 	
-	double timez = timer.AsMilliseconds();
-	while (timez < (MAX_FRAME_TIME)) {
-		timez += 0.001f;
+	// limit frame rate
+	double frameTime = timer.AsMilliseconds();
+	while (frameTime < (MAX_FRAME_TIME)) {
+		frameTime += 0.001f;
 	}
-	DebugOut("frame time: %f\n", timez);
+	DebugOut("frame time: %f\n", frameTime);
 
 	EndScene();
 

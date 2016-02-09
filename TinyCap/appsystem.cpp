@@ -21,6 +21,9 @@ bool AppSystem::Init()
 		return false;
 	}
 
+	// init COM
+	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
 	return true;
 };
 
@@ -29,6 +32,8 @@ void AppSystem::Shutdown()
 	m_RenderCore->Shutdown();
 	delete m_RenderCore;
 	m_RenderCore = nullptr;
+	
+	CoUninitialize();
 }; 
 
 void AppSystem::Refresh()
@@ -59,6 +64,10 @@ bool AppSystem::Frame()
 {
 	if (m_RenderCore) {
 		m_RenderCore->Render();		
+	}
+	else {
+		DebugOut("Rendercore failed abruptly!\n");
+		return false;
 	}
 	return true;
 }

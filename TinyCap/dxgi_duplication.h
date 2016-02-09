@@ -16,7 +16,8 @@ public:
 
 private:
 	IDXGIOutputDuplication *m_DesktopDuplication;
-	ID3D11Texture2D *m_AcquiredDesktopImage;	 
+	IDXGIResource *m_DesktopResource;
+	ID3D11Texture2D *m_AcquiredDesktopImage;
 };
 
 #endif
