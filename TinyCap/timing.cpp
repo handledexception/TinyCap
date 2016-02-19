@@ -43,5 +43,5 @@ long long HighResolutionTimer::AsMicroseconds()
 
 double HighResolutionTimer::AsMilliseconds()
 {
-	return (double)(get_ticks() * 1000) / m_ClockFrequency.QuadPart);
+	return (double)(get_ticks() * 1000) / m_ClockFrequency.QuadPart;
 }

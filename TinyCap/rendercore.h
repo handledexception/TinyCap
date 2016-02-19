@@ -24,12 +24,12 @@ class RenderCore
 {
 public:
 	RenderCore();
-	//RenderCore(const RenderCore &);
 	~RenderCore();
 
 	bool Init(int, int, HWND);
 	void Shutdown();
 	bool Render();
+
 	void ZBufferState(int);
 
 	IDXGISwapChain *GetSwapChain();
@@ -43,7 +43,7 @@ private:
 	void BeginScene(float, float, float, float);
 	void EndScene();
 
-	bool EnumerateDisplayAdapters(std::vector<IDXGIAdapter1*> *);
+	bool EnumerateDisplayAdapters(std::vector<IDXGIAdapter1*> *dxgiAdapters);
 
 private:
 	IDXGISwapChain *m_SwapChain;
@@ -65,5 +65,5 @@ private:
 	char m_VideoCardDesc[128];
 };
 
-static std::vector<IDXGIAdapter1*> gDXGIAdapters;
+static std::vector<IDXGIAdapter1*> g_DXGIAdapters;
 #endif

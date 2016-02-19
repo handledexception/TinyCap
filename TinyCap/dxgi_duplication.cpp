@@ -17,18 +17,34 @@ DXGIDuplication::~DXGIDuplication()
 	if (m_DesktopDuplication) { m_DesktopDuplication->Release(); m_DesktopDuplication = nullptr; }	
 };
 
-bool DXGIDuplication::Init(IDXGIOutput1 *output, ID3D11Device *device)
+bool DXGIDuplication::Init(int adapterNum, int outputNum, std::vector<IDXGIAdapter1*> *dxgiAdapters, ID3D11Device *device)
 {
 	HRESULT hr;
+	
+	IDXGIAdapter1 *adapter;
+	IDXGIOutput *adapterOutputTemp;
+	IDXGIOutput1 *adapterOutput;
+
+	adapter = dxgiAdapters->at(adapterNum);
+
+	hr = adapter->EnumOutputs(outputNum, &adapterOutputTemp);
+	if (FAILED(hr)) {
+		return false;
+	}
+
+	hr = adapterOutputTemp->QueryInterface(&adapterOutput);
 
 	// start DXGI Desktop Duplication API
-	hr = output->DuplicateOutput(device, &m_DesktopDuplication);
+	hr = adapterOutput->DuplicateOutput(device, &m_DesktopDuplication);
 	if (FAILED(hr)) {
 		DebugOut("DXGI Desktop Duplication not supported on this system.\n");
-		output->Release();
+		adapterOutput->Release();
 
 		return false;
 	}
+
+	adapterOutputTemp->Release();
+	adapterOutput->Release();
 
 	return true;
 };

@@ -16,7 +16,7 @@ double accumulator = 0.0f;
 ////
 //// globals
 ////
-DXGIDuplication *g_DesktopDuplication;
+DXGIDuplication *g_DesktopDuplication, *g_DesktopDuplication2;
 Scene *g_Scene, *g_Scene2;
 MF_H264_Encoder *g_MFEncoder;
 ////
@@ -37,8 +37,7 @@ RenderCore::~RenderCore()
 bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 {
 	HRESULT hr;
-	
-	IDXGIFactory1 *factory;
+		
 	IDXGIAdapter1 *adapter;
 	IDXGIOutput *adapterOutput;
 	IDXGIOutput1 *adapterOutput1;
@@ -59,22 +58,11 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	size_t stringLength;
 	int error;
 	float fov, aspect;
-
-	hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&factory);
-	if (FAILED(hr)) {
-		return false;
-	}
 		
-	//hr = factory->EnumAdapters(0, &adapter);
-	//if (FAILED(hr)) {
-	//	return false;
-	//}
-
-	if (!EnumerateDisplayAdapters(&gDXGIAdapters)) {
+	if (!EnumerateDisplayAdapters(&g_DXGIAdapters)) {
 		return false;
 	}
-
-	adapter = gDXGIAdapters[0];
+	adapter = g_DXGIAdapters.at(0);
 
 	hr = adapter->EnumOutputs(0, &adapterOutput);
 	if (FAILED(hr)) {
@@ -128,7 +116,6 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 
 	adapterOutput->Release();
 	adapter->Release();
-	factory->Release();
 	
 	// set single back buffer
 	ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
@@ -198,8 +185,8 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	}
 	pBackBuffer->Release();
 
-	ZeroMemory(&depthBufferDesc, sizeof(depthBufferDesc));	
 	// set up depth buffer description
+	ZeroMemory(&depthBufferDesc, sizeof(depthBufferDesc));		
 	depthBufferDesc.Width = screenWidth;
 	depthBufferDesc.Height = screenHeight;
 	depthBufferDesc.MipLevels = 1;
@@ -219,8 +206,8 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 		return false;
 	}
 
-	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
 	// set up description of stencil state
+	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));	
 	depthStencilDesc.DepthEnable = true; // z-buffer enabled
 	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
@@ -247,12 +234,36 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 		DebugOut("ID3D11Device::CreateDepthStencilState failed!\n");
 		return false;
 	}
-	
-	// set depth stencil state with z-buffer disabled
-	m_d3d11DeviceContext->OMSetDepthStencilState(m_d3d11DepthStencilState, 1);
 
-	ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
+	// Now create a second depth stencil state which turns off the Z buffer for 2D rendering.  The only difference is 
+	// that DepthEnable is set to false, all other parameters are the same as the other depth stencil state.
+	depthDisabledStencilDesc.DepthEnable = false;
+	depthDisabledStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthDisabledStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthDisabledStencilDesc.StencilEnable = true;
+	depthDisabledStencilDesc.StencilReadMask = 0xFF;
+	depthDisabledStencilDesc.StencilWriteMask = 0xFF;
+	depthDisabledStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+	depthDisabledStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	depthDisabledStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+	depthDisabledStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthDisabledStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Create the state using the device.
+	hr = m_d3d11Device->CreateDepthStencilState(&depthDisabledStencilDesc, &m_d3d11DepthStencilDisabledState);
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	// disable the Z-Buffer
+	ZBufferState(0);
+
 	// set up depth stencil view description
+	ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));	
 	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
@@ -287,10 +298,6 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 	}
 	
 	m_d3d11DeviceContext->RSSetState(m_d3d11RasterState);
-	
-	
-	// temp set render targets
-	//m_d3d11DeviceContext->OMSetRenderTargets(1, &m_d3d11RenderTargetView, nullptr);
 
 	// set up viewport for rendering
 	D3D11_VIEWPORT viewport;
@@ -309,45 +316,22 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 		
 	m_ProjectionMatrix = DirectX::XMMatrixPerspectiveFovLH(fov, aspect, SCREEN_NEAR, SCREEN_DEPTH);
 	m_WorldMatrix = DirectX::XMMatrixIdentity();
-	m_OrthoMatrix = DirectX::XMMatrixOrthographicLH((float)screenWidth, (float)screenHeight, SCREEN_NEAR, SCREEN_DEPTH);	
-	
-	// Now create a second depth stencil state which turns off the Z buffer for 2D rendering.  The only difference is 
-	// that DepthEnable is set to false, all other parameters are the same as the other depth stencil state.
-	depthDisabledStencilDesc.DepthEnable = false;
-	depthDisabledStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthDisabledStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-	depthDisabledStencilDesc.StencilEnable = true;
-	depthDisabledStencilDesc.StencilReadMask = 0xFF;
-	depthDisabledStencilDesc.StencilWriteMask = 0xFF;
-	depthDisabledStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	depthDisabledStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	depthDisabledStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-	depthDisabledStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	m_OrthoMatrix = DirectX::XMMatrixOrthographicLH((float)screenWidth, (float)screenHeight, SCREEN_NEAR, SCREEN_DEPTH);
 
-	// Create the state using the device.
-	hr = m_d3d11Device->CreateDepthStencilState(&depthDisabledStencilDesc, &m_d3d11DepthStencilDisabledState);
-	if (FAILED(hr))
-	{
-		return false;
-	}
-	
 	// Scene is a textured quad to draw on
 	g_Scene = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);
 	g_Scene2 = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);	
 
 	// new DXGI Desktop Duplication object
 	g_DesktopDuplication = new DXGIDuplication();
-	if (!g_DesktopDuplication->Init(adapterOutput1, GetDevice())) { DebugOut("Failed to init DXGI Desktop Duplication API!\n"); return false; }
+	if (!g_DesktopDuplication->Init(0, 0, &g_DXGIAdapters, GetDevice())) { DebugOut("Failed to init DXGI Desktop Duplication API!\n"); return false; }
+	
+	g_DesktopDuplication2 = new DXGIDuplication();
+	if (!g_DesktopDuplication2->Init(0, 1, &g_DXGIAdapters, GetDevice())) { DebugOut("Failed to init DXGI Desktop Duplication API for Adapter 1/Output 2!\n"); return false; }
 
 	// initialize Media Foundation
 	g_MFEncoder = new MF_H264_Encoder(m_d3d11Device, m_d3d11DeviceContext);
 	if (!g_MFEncoder->Init()) { DebugOut("Failed to init Media Foundation H.264 Encoder!\n"); return false; }
-
-	ZBufferState(0);
 
 	return true;
 };
@@ -391,14 +375,15 @@ bool RenderCore::Render()
 	}	 
 	
 	// Get Desktop Duplication frame
-	if (g_DesktopDuplication->GetFrame() == true) {
+	if (g_DesktopDuplication->GetFrame() && g_DesktopDuplication2->GetFrame()) {
 		// Render Desktop Duplication frame onto our Scene
 		g_Scene->Render(g_DesktopDuplication->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
-		//g_Scene2->Render(g_DesktopDuplication->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
+		g_Scene2->Render(g_DesktopDuplication2->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
 
 		g_MFEncoder->WriteFrame(g_DesktopDuplication->GetTexture());
 		
 		g_DesktopDuplication->FinishFrame();
+		g_DesktopDuplication2->FinishFrame();
 	}
 	
 	// limit frame rate

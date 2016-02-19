@@ -10,6 +10,8 @@
 #define SYSTEM_VIDEO_WIDTH 1280
 #define SYSTEM_VIDEO_HEIGHT 720
 
+#define SYSTEM_APP_NAME L"TinyCap"
+
 class AppSystem
 {
 public:
@@ -30,6 +32,7 @@ private:
 
 private:
 	LPWSTR m_AppName;
+	int m_AppWidth, m_AppHeight;
 	HINSTANCE m_hInstance;
 	HWND m_hWnd;
 

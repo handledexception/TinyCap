@@ -8,15 +8,15 @@ AppSystem::~AppSystem() { };
 
 bool AppSystem::Init()
 {
-	int screenWidth = SYSTEM_VIDEO_WIDTH;
-	int screenHeight = SYSTEM_VIDEO_HEIGHT;
+	m_AppWidth = SYSTEM_VIDEO_WIDTH;
+	m_AppHeight = SYSTEM_VIDEO_HEIGHT;
 
 	// initialize the app window
-	InitializeWindows(screenWidth, screenHeight);
+	InitializeWindows(m_AppWidth, m_AppHeight);
 
 	// initialize Direct3D11 rendering core
 	m_RenderCore = new RenderCore();
-	if (!m_RenderCore->Init(screenWidth, screenHeight, m_hWnd)) {
+	if (!m_RenderCore->Init(m_AppWidth, m_AppHeight, m_hWnd)) {
 		DebugOut("Fatal Error: Render Core initialization failed!\n");
 		return false;
 	}
@@ -106,7 +106,7 @@ void AppSystem::InitializeWindows(int screenWidth, int screenHeight)
 	// instance of this application
 	m_hInstance = GetModuleHandle(nullptr);
 	// name of this application
-	m_AppName = L"TinyCap";
+	m_AppName = SYSTEM_APP_NAME;
 
 	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wc.lpfnWndProc = WndProc;
