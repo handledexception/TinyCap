@@ -16,8 +16,8 @@ double accumulator = 0.0f;
 ////
 //// globals
 ////
-DXGIDuplication *g_DesktopDuplication, *g_DesktopDuplication2;
-Scene *g_Scene, *g_Scene2;
+DXGIDuplication *g_DesktopDuplication; //, *g_DesktopDuplication2;
+Scene *g_Scene; // , *g_Scene2;
 MF_H264_Encoder *g_MFEncoder;
 ////
 ////
@@ -320,14 +320,14 @@ bool RenderCore::Init(int screenWidth, int screenHeight, HWND hWnd)
 
 	// Scene is a textured quad to draw on
 	g_Scene = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);
-	g_Scene2 = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);	
+	//g_Scene2 = new Scene(GetDevice(), GetDeviceContext(), screenWidth, screenHeight);	
 
 	// new DXGI Desktop Duplication object
 	g_DesktopDuplication = new DXGIDuplication();
 	if (!g_DesktopDuplication->Init(0, 0, &g_DXGIAdapters, GetDevice())) { DebugOut("Failed to init DXGI Desktop Duplication API!\n"); return false; }
 	
-	g_DesktopDuplication2 = new DXGIDuplication();
-	if (!g_DesktopDuplication2->Init(0, 1, &g_DXGIAdapters, GetDevice())) { DebugOut("Failed to init DXGI Desktop Duplication API for Adapter 1/Output 2!\n"); return false; }
+	//g_DesktopDuplication2 = new DXGIDuplication();
+	//if (!g_DesktopDuplication2->Init(0, 1, &g_DXGIAdapters, GetDevice())) { DebugOut("Failed to init DXGI Desktop Duplication API for Adapter 1/Output 2!\n"); return false; }
 
 	// initialize Media Foundation
 	g_MFEncoder = new MF_H264_Encoder(m_d3d11Device, m_d3d11DeviceContext);
@@ -343,12 +343,15 @@ void RenderCore::Shutdown()
 
 	delete g_DesktopDuplication;
 	g_DesktopDuplication = nullptr;
+	
+	//delete g_DesktopDuplication2;
+	//g_DesktopDuplication2 = nullptr;
 
 	g_MFEncoder->Shutdown();
 	delete g_MFEncoder;
 	g_MFEncoder = nullptr;
-	delete g_Scene2;
-	g_Scene2 = nullptr;
+	//delete g_Scene2;
+	//g_Scene2 = nullptr;
 
 	if (m_d3d11DepthStencilState) { m_d3d11DepthStencilState->Release(); }
 	if (m_d3d11DepthStencilDisabledState) { m_d3d11DepthStencilDisabledState->Release(); }
@@ -369,21 +372,21 @@ bool RenderCore::Render()
 	BeginScene(0.0f, 0.125f, 0.3f, 1.0f);	
 	
 	// Scene::UpdateVertexBuffer allows us to position the Scene
-	if (!g_Scene->UpdateVertexBuffer(0, 0, 1280, 720)  || !g_Scene2->UpdateVertexBuffer(100, 100, 640, 360)) {	
+	if (!g_Scene->UpdateVertexBuffer(0, 0, 1280, 720)) { //  || !g_Scene2->UpdateVertexBuffer(100, 100, 640, 360)) {	
 		DebugOut("Scene::UpdateVertexBuffer failed!\n");
 		return false;
 	}	 
 	
 	// Get Desktop Duplication frame
-	if (g_DesktopDuplication->GetFrame() && g_DesktopDuplication2->GetFrame()) {
+	if (g_DesktopDuplication->GetFrame()) { // && g_DesktopDuplication2->GetFrame()) {
 		// Render Desktop Duplication frame onto our Scene
 		g_Scene->Render(g_DesktopDuplication->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
-		g_Scene2->Render(g_DesktopDuplication2->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
+		//g_Scene2->Render(g_DesktopDuplication2->GetTexture(), m_WorldMatrix, m_OrthoMatrix);
 
 		g_MFEncoder->WriteFrame(g_DesktopDuplication->GetTexture());
 		
 		g_DesktopDuplication->FinishFrame();
-		g_DesktopDuplication2->FinishFrame();
+		//g_DesktopDuplication2->FinishFrame();
 	}
 	
 	// limit frame rate
